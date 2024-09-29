@@ -1,4 +1,4 @@
-# ![Moneyflow Icon](src/static/data/app_ui/moneyflow_icon.png) Moneyflow
+# <img src="src/static/data/app_ui/moneyflow_icon.png" width="20"> Moneyflow
 
 Moneyflow is a transaction analysis tool designed to help you visualize and understand your financial flows. Born out of a desire to analyze bank transactions more effectively, this application provides an intuitive interface for exploring complex financial data.
 
