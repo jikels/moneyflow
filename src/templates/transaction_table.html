@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Table</title>
+    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Transaction Table</h1>
+        <h2>From: <span id="fromLabel"></span> To: <span id="toLabel"></span></h2>
+        <div id="transactionTableContainer">
+            <table id="transactionTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Amount (EUR)</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <button id="downloadCsv">Download as CSV</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const useFilters = urlParams.get('use_filters') === 'true';
+            
+            let requestBody;
+            if (useFilters) {
+                requestBody = new URLSearchParams(window.location.search);
+                requestBody.delete('use_filters');
+                document.getElementById('fromLabel').textContent = 'Filtered';
+                document.getElementById('toLabel').textContent = 'Transactions';
+            } else {
+                const fromLabel = urlParams.get('from');
+                const toLabel = urlParams.get('to');
+                requestBody = `from_label=${encodeURIComponent(fromLabel)}&to_label=${encodeURIComponent(toLabel)}`;
+                document.getElementById('fromLabel').textContent = fromLabel;
+                document.getElementById('toLabel').textContent = toLabel;
+            }
+
+            fetch('/get_filtered_transactions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: requestBody
+            })
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.querySelector('#transactionTable tbody');
+                tableBody.innerHTML = '';
+                if (data.transactions.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4">No transactions found</td></tr>';
+                } else {
+                    data.transactions.forEach(transaction => {
+                        const row = tableBody.insertRow();
+                        row.insertCell().textContent = transaction.Date;
+                        row.insertCell().textContent = transaction['From Label'];
+                        row.insertCell().textContent = transaction['To Label'];
+                        row.insertCell().textContent = parseFloat(transaction['Amount in Euro']).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    });
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching filtered transactions:", error);
+            });
+
+            // Add event listener for the download button
+            const downloadButton = document.getElementById('downloadCsv');
+            if (downloadButton) {
+                downloadButton.addEventListener('click', downloadCsv);
+            }
+        });
+
+        function downloadCsv() {
+            const fromLabel = document.getElementById('fromLabel').textContent;
+            const toLabel = document.getElementById('toLabel').textContent;
+            const useFilters = fromLabel === 'Filtered' && toLabel === 'Transactions';
+
+            let url = '/download_csv';
+            let body;
+
+            if (useFilters) {
+                // Use the current URL parameters for filtered transactions
+                body = new URLSearchParams(window.location.search);
+                body.delete('use_filters');
+            } else {
+                body = new URLSearchParams({
+                    from_label: fromLabel,
+                    to_label: toLabel
+                });
+            }
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: body
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = useFilters ? 'filtered_transactions.csv' : `transactions_${fromLabel}_to_${toLabel}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Error downloading CSV:', error));
+        }
+    </script>
+    <footer class="copyright">
+        <p>&copy; 2024 Joel Ikels. Released under the <a href="https://mit-license.org">MIT License</a>.</p>
+    </footer>
+</body>
+</html>

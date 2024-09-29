@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moneyflow - Upload CSV</title>
+    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .upload-container {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+            padding: 40px;
+            background-color: var(--card-background-color);
+            border-radius: 18px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .upload-form {
+            margin-top: 30px;
+        }
+        .file-input {
+            display: none;
+        }
+        .file-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .file-label:hover {
+            background-color: var(--primary-color-hover);
+        }
+        #file-name {
+            margin-top: 10px;
+            font-style: italic;
+        }
+        .submit-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .submit-button:hover {
+            background-color: var(--primary-color-hover);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{ url_for('static', filename='data/app_ui/moneyflow_icon.png') }}" alt="Moneyflow Icon" class="app-icon">
+            <h1>moneyflow</h1>
+        </div>
+        <div class="upload-container">
+            <h2>Upload Your Transaction CSV</h2>
+            <form action="{{ url_for('upload_csv') }}" method="post" enctype="multipart/form-data" class="upload-form">
+                <input type="file" name="csv_file" id="csv_file" class="file-input" accept=".csv" required>
+                <label for="csv_file" class="file-label">Choose CSV File</label>
+                <div id="file-name"></div>
+                <button type="submit" class="submit-button">Upload and Visualize</button>
+            </form>
+        </div>
+    </div>
+    <footer class="copyright">
+        <p>&copy; 2024 Joel Ikels. Released under the <a href="https://mit-license.org">MIT License</a>.</p>
+    </footer>
+    <script>
+        document.getElementById('csv_file').addEventListener('change', function(e) {
+            var fileName = e.target.files[0].name;
+            document.getElementById('file-name').textContent = fileName;
+        });
+    </script>
+</body>
+</html>

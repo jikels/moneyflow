@@ -1,0 +1,319 @@
+:root {
+    --primary-color: #0071e3;
+    --primary-color-hover: #005bb5; /* Slightly darker shade for hover effects */
+    --background-color: #f5f5f7;
+    --card-background-color: #ffffff; /* Added for card and modal backgrounds */
+    --text-color: #1d1d1f;
+    --border-color: #d2d2d7;
+}
+
+body {
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.5;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+h1 {
+    font-size: 48px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.main-content {
+    display: flex;
+    gap: 20px;
+    height: calc(100vh - 120px);
+}
+
+.graph-container {
+    position: relative;
+    background-color: var(--card-background-color);
+    border-radius: 18px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    flex-grow: 1;
+    height: 90%;
+}
+
+.sidebar {
+    flex: 0 0 350px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+}
+
+.collapsible-button {
+    background-color: var(--primary-color);
+    color: var(--background-color);
+    cursor: pointer;
+    padding: 10px 15px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 16px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.collapsible-button:hover {
+    background-color: var(--primary-color-hover);
+}
+
+.collapsible-content {
+    background-color: var(--card-background-color);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    padding: 0 15px;
+    border-radius: 5px;
+}
+
+.collapsible-content.active {
+    max-height: 1000px; /* Adjust this value as needed */
+    padding: 15px;
+}
+
+.collapsible-content .control-group {
+    margin-bottom: 15px;
+}
+
+.collapsible-content .buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Adjustments for Transaction Details */
+#labelPairFilter {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#labelPairFilter select {
+    width: 100%;
+}
+
+#transactionDisplay {
+    margin-top: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+    display: block; /* Ensure it's always visible */
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+    background-color: var(--card-background-color);
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    width: 80%;
+    max-width: 600px;
+    border-radius: 8px;
+}
+
+.close {
+    color: var(--text-color);
+    opacity: 0.6;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+    color: var(--text-color);
+    opacity: 1;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#transactionTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+#transactionTable th,
+#transactionTable td {
+    border: 1px solid var(--border-color);
+    padding: 8px;
+    text-align: left;
+}
+
+#transactionTable th {
+    background-color: var(--background-color);
+}
+
+#exportCsv {
+    margin-top: 20px;
+}
+
+#transactionDisplay {
+    margin-top: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+    display: block; /* Ensure it's always visible */
+}
+
+/* Styles for annotation page */
+.annotation-controls {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.annotation-controls button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: var(--primary-color);
+    color: var(--background-color);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.annotation-controls button:hover {
+    background-color: var(--primary-color-hover);
+}
+
+.summary-watermark {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 12px;
+    color: var(--text-color);
+    opacity: 0.6;
+    pointer-events: none; /* Allows clicks to pass through to the graph */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-family: 'SF Pro Display', sans-serif;
+}
+
+/* Additional Styles for Collapsible Menus */
+.collapsible {
+    width: 100%;
+}
+
+.collapsible-button.active {
+    background-color: var(--primary-color-hover);
+}
+
+.collapsible-content .control-group label {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.collapsible-content .control-group select,
+.collapsible-content .control-group input {
+    width: 100%;
+}
+
+.buttons button {
+    padding: 10px;
+    font-size: 14px;
+}
+
+/* Ensure graph fills its container */
+#graph {
+    width: 100%;
+    height: 100%;
+}
+
+#transactionTableContainer {
+    display: block;
+    margin-top: 0;
+    padding: 0;
+    background-color: transparent;
+    box-shadow: none;
+    width: 100%;
+    max-width: none;
+    position: static;
+}
+
+#labelPairFilter {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#labelPairFilter select {
+    flex: 1;
+}
+
+#transactionDisplay {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+#transactionTable {
+    width: 100%;
+    font-size: 12px;
+}
+
+#transactionTable th,
+#transactionTable td {
+    padding: 5px;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 40px;
+}
+
+.app-icon {
+    width: 48px;
+    height: 48px;
+    margin-right: 15px;
+}
+
+h1 {
+    font-size: 48px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.copyright {
+    text-align: center;
+    padding: 5px 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-size: 14px;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    left: 0;
+}

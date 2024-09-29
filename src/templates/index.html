@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Graph Visualization</title>
+    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Optional: Add some transition for smooth toggle */
+        #transactionDisplay {
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            overflow: hidden;
+            display: none; /* Hide the table by default */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{ url_for('static', filename='data/app_ui/moneyflow_icon.png') }}" alt="Moneyflow Icon" class="app-icon">
+            <h1>Analysis</h1>
+        </div>
+        <div class="main-content">
+            <div class="graph-container">
+                <div id="graph"></div>
+                <!-- Watermark for Summary Statistics -->
+                <div id="summaryWatermark" class="summary-watermark">
+                    Total Transactions: <span id="totalTransactions">0</span> |
+                    Largest Transaction: €<span id="largestTransaction">0</span> |
+                    Most Frequent Sender: <span id="mostFrequentSender">N/A</span> |
+                    Most Frequent Recipient: <span id="mostFrequentRecipient">N/A</span> |
+                    Total Sent: €<span id="totalSent">0</span> |
+                    Total Received: €<span id="totalReceived">0</span>
+                </div>
+            </div>
+            <div class="sidebar">
+                <!-- Collapsible Filtering Section -->
+                <div class="collapsible">
+                    <button type="button" class="collapsible-button">🔍 Filtering</button>
+                    <div class="collapsible-content">
+                        <div class="control-group">
+                            <label for="from_account">From Account</label>
+                            <select id="from_account" name="from_account">
+                                <option value="">All</option>
+                                {% for account in from_accounts %}
+                                <option value="{{ account }}">{{ account }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label for="to_account">To Account</label>
+                            <select id="to_account" name="to_account">
+                                <option value="">All</option>
+                                {% for account in to_accounts %}
+                                <option value="{{ account }}">{{ account }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label for="from_sender">From Sender</label>
+                            <select id="from_sender" name="from_sender">
+                                <option value="">All</option>
+                                {% for sender in senders %}
+                                <option value="{{ sender }}">{{ sender }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label for="to_recipient">To Recipient</label>
+                            <select id="to_recipient" name="to_recipient">
+                                <option value="">All</option>
+                                {% for recipient in recipients %}
+                                <option value="{{ recipient }}">{{ recipient }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label for="min_amount">Min Amount</label>
+                            <input type="number" id="min_amount" name="min_amount" min="0">
+                        </div>
+                        <div class="control-group">
+                            <label for="max_amount">Max Amount</label>
+                            <input type="number" id="max_amount" name="max_amount" min="0">
+                        </div>
+                        <div class="control-group">
+                            <label for="from_date">From Date</label>
+                            <input type="date" id="from_date" name="from_date">
+                        </div>
+                        <div class="control-group">
+                            <label for="to_date">To Date</label>
+                            <input type="date" id="to_date" name="to_date">
+                        </div>
+                        <div class="control-group">
+                            <label for="display_amounts">Display Amounts</label>
+                            <select id="display_amounts" name="display_amounts">
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label for="enable_physics">Enable Physics</label>
+                            <select id="enable_physics" name="enable_physics">
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label for="proportional_edges">Proportional Edges</label>
+                            <select id="proportional_edges" name="proportional_edges">
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                        <div class="control-group buttons">
+                            <button onclick="viewTransactionTable(true)">View Filtered Transaction Table</button>
+                            <button onclick="annotateGraph()">Annotate</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Collapsible Transaction Details Section -->
+                <div class="collapsible">
+                    <button type="button" class="collapsible-button" id="transactionDetailsButton">📄 Transaction Details</button>
+                    <div class="collapsible-content" id="transactionTableContainer">
+                        <div id="labelPairFilter">
+                            <select id="fromLabelSelect"></select>
+                            <select id="toLabelSelect"></select>
+                        </div>
+                        <div class="control-group buttons">
+                            <button onclick="viewTransactionTable()">View Transaction Table</button>
+                        </div>
+                        <div id="transactionDisplay">
+                            <table id="transactionTable">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>From</th>
+                                        <th>To</th>
+                                        <th>Amount (EUR)</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="transactionModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Transaction History</h2>
+                <table id="transactionTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Amount (EUR)</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <button id="exportCsv">Export as CSV</button>
+            </div>
+        </div>
+    
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+        <script>
+            console.log("vis.js loaded:", typeof vis !== 'undefined');
+            // This variable needs to be defined here as it's using a Jinja2 template
+            const initialGraphDataString = '{{ initial_graph_data | tojson | safe }}';
+            let initialGraphData;
+            try {
+                initialGraphData = JSON.parse(initialGraphDataString);
+            } catch (error) {
+                console.error("Error parsing initialGraphData:", error);
+                initialGraphData = { nodes: [], edges: [] };
+            }
+        </script>
+        <script src="{{ url_for('static', filename='js/script_index.js') }}"></script>
+    </body>
+    <footer class="copyright">
+        <p>&copy; 2024 Joel Ikels. Released under the <a href="https://mit-license.org">MIT License</a>.</p>
+    </footer>
+</html>
