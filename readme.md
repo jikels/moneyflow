@@ -47,18 +47,6 @@ Moneyflow is containerized using Docker for easy deployment. Follow these steps 
 
 1. Start by uploading your CSV file containing transaction data on the intro page.
 
-
-```63:69:src/templates/intro.html
-            <h2>Upload Your Transaction CSV</h2>
-            <form action="{{ url_for('upload_csv') }}" method="post" enctype="multipart/form-data" class="upload-form">
-                <input type="file" name="csv_file" id="csv_file" class="file-input" accept=".csv" required>
-                <label for="csv_file" class="file-label">Choose CSV File</label>
-                <div id="file-name"></div>
-                <button type="submit" class="submit-button">Upload and Visualize</button>
-            </form>
-```
-
-
 2. Once uploaded, you'll be taken to the main visualization page where you can interact with your transaction graph.
 
 3. Use the filtering options in the sidebar to refine your view of the data.
@@ -78,45 +66,6 @@ Your input CSV should contain the following columns:
 - To Account
 - To Recipient
 - Amount in Euro
-
-An example of how this data might be structured can be found in the `generate_sample_data` function:
-
-
-```19:50:src/example_data.py
-    with open(filename, 'w', newline='') as csvfile:
-        fieldnames = ['Date', 'From Account', 'From Sender', 'To Account', 'To Recipient', 'Amount in Euro']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-        writer.writeheader()
-        start_date = datetime(2023, 1, 1)
-        for _ in range(num_records):
-            date = start_date + timedelta(days=random.randint(0, 365))
-            
-            # 30% chance of using a biased pair
-            if random.random() < 0.3:
-                from_sender, to_recipient = random.choice(biased_pairs)
-                from_account = random.choice(accounts)
-                to_account = random.choice(accounts)
-            else:
-                from_sender = random.choice(senders)
-                to_recipient = random.choice(recipients)
-                from_account = random.choice(accounts)
-                to_account = random.choice(accounts)
-
-            # 10% chance of internal transfer (same account)
-            if random.random() < 0.1:
-                to_account = from_account
-
-            writer.writerow({
-                'Date': date.strftime('%Y-%m-%d'),
-                'From Account': from_account,
-                'From Sender': from_sender,
-                'To Account': to_account,
-                'To Recipient': to_recipient,
-                'Amount in Euro': round(random.uniform(100, 10000), 2)
-            })
-```
-
 
 ## License
 
