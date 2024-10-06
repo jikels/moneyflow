@@ -21,8 +21,14 @@ function initializeGraph(data) {
     network.on("select", function (params) {
         if (params.nodes.length > 0) {
             selectedElement = { type: 'node', id: params.nodes[0] };
+            // Update the node label textarea with the current label
+            const node = network.body.data.nodes.get(selectedElement.id);
+            document.getElementById('node-label').value = node.label || '';
         } else if (params.edges.length > 0) {
             selectedElement = { type: 'edge', id: params.edges[0] };
+            // Update the edge label textarea with the current label
+            const edge = network.body.data.edges.get(selectedElement.id);
+            document.getElementById('edge-label').value = edge.label || '';
         } else {
             selectedElement = null;
         }
@@ -39,14 +45,16 @@ function initializeGraph(data) {
 function getGraphOptions() {
     const physicsEnabled = document.getElementById('enable_physics').value === 'true';
 
-    // Base options
     const options = {
         nodes: {
             shape: 'dot',
             size: 30,
             font: {
-                size: 12,
-                color: '#000000'
+                size: 14,
+                color: '#000000',
+                face: 'arial',
+                multi: false,
+                align: 'center'
             },
             borderWidth: 2,
             fixed: {
@@ -58,14 +66,22 @@ function getGraphOptions() {
             arrows: {
                 to: { enabled: true, scaleFactor: 1, type: 'arrow' }
             },
+            font: {
+                size: 14,
+                color: '#000000',
+                face: 'arial',
+                multi: false,
+                align: 'horizontal',
+                strokeWidth: 0,
+            },
             scaling: {
                 min: 1,
                 max: 15,
                 label: {
-                    enabled: true,
+                    enabled: false,
                     min: 14,
-                    max: 30,
-                    maxVisible: 30,
+                    max: 14,
+                    maxVisible: 14,
                     drawThreshold: 5
                 },
                 customScalingFunction: function (min, max, total, value) {
@@ -169,6 +185,42 @@ function applyIconToSelectedNode() {
     }
 }
 
+function applyNodeLabel() {
+    if (selectedElement && selectedElement.type === 'node' && network) {
+        const label = formatLabel(document.getElementById('node-label').value);
+        network.body.data.nodes.update({
+            id: selectedElement.id, 
+            label: label
+        });
+        console.log(`Applied label "${label}" to node ${selectedElement.id}`);
+    } else {
+        alert("Please select a node first.");
+    }
+}
+
+function applyEdgeLabel() {
+    if (selectedElement && selectedElement.type === 'edge' && network) {
+        const label = formatLabel(document.getElementById('edge-label').value);
+        network.body.data.edges.update({
+            id: selectedElement.id, 
+            label: label
+        });
+        console.log(`Applied label "${label}" to edge ${selectedElement.id}`);
+    } else {
+        alert("Please select an edge first.");
+    }
+}
+
+function formatLabel(label) {
+    // No need to replace newlines, we'll use them directly
+    return label;
+}
+
+// Make sure to call this function when initializing or updating the graph
+function updateGraphOptions() {
+    network.setOptions(getGraphOptions());
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof initialGraphData !== 'undefined') {
         initializeGraph(initialGraphData);
@@ -182,6 +234,23 @@ document.addEventListener('DOMContentLoaded', function() {
         saveNodePositions();
         network.setOptions({ physics: { enabled: this.value === 'true' } });
     });
+
+    // Add event listener for Ctrl+Enter on the node label textarea
+    document.getElementById('node-label').addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            applyNodeLabel();
+        }
+    });
+
+    // Add event listener for Ctrl+Enter on the edge label textarea
+    document.getElementById('edge-label').addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            applyEdgeLabel();
+        }
+    });
+
+    // Update graph options after initialization
+    updateGraphOptions();
 });
 
 window.addEventListener('load', function() {
@@ -282,4 +351,9 @@ function addIconToSelection(icon) {
     });
 
     iconSelection.appendChild(img);
+}
+
+// Add this new function
+function formatLabelForTextField(label) {
+    return label.replace(/<br\s*\/?>/g, '\n');
 }

@@ -362,6 +362,8 @@ function viewTransactionTable(useFilters = false) {
             to_date: document.getElementById('to_date').value
         };
         
+        console.log("Filters being applied:", filters);
+        
         const queryString = Object.entries(filters)
             .filter(([_, value]) => value !== '')
             .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
@@ -373,5 +375,6 @@ function viewTransactionTable(useFilters = false) {
         const toLabel = document.getElementById('toLabelSelect').value;
         url += `from=${encodeURIComponent(fromLabel)}&to=${encodeURIComponent(toLabel)}`;
     }
+    console.log("Transaction table URL:", url);
     window.open(url, '_blank');
 }

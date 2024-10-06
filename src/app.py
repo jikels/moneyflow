@@ -183,6 +183,9 @@ def get_transaction_history():
 
 @app.route('/get_filtered_transactions', methods=['POST'])
 def get_filtered_transactions():
+    print("Received request for filtered transactions")
+    print("Form data:", request.form)
+    
     if request.form.get('use_filters') == 'true':
         from_account = request.form.get('from_account', '')
         to_account = request.form.get('to_account', '')
@@ -193,7 +196,7 @@ def get_filtered_transactions():
         from_date = pd.to_datetime(request.form.get('from_date') or '1900-01-01')
         to_date = pd.to_datetime(request.form.get('to_date') or '2100-12-31')
         
-        print(f"Received filter parameters: {from_account}, {to_account}, {from_sender}, {to_recipient}, {min_amount}, {max_amount}, {from_date}, {to_date}")
+        print(f"Applying filters: {from_account}, {to_account}, {from_sender}, {to_recipient}, {min_amount}, {max_amount}, {from_date}, {to_date}")
         
         filtered_data = transaction_data.filter_data(
             from_account, to_account, from_sender, to_recipient,
@@ -202,16 +205,14 @@ def get_filtered_transactions():
     else:
         from_label = request.form.get('from_label')
         to_label = request.form.get('to_label')
-        if from_label is None and to_label is None:
-            # If both labels are None, return all transactions
-            filtered_data = transaction_data.data
-        elif from_label == to_label:
-            # If both labels are the same, return all transactions involving this account/entity
+        print(f"Fetching transactions for labels: {from_label} -> {to_label}")
+        if from_label == to_label:
             filtered_data = transaction_data.get_transactions_for_entity(from_label)
         else:
             filtered_data = transaction_data.get_transaction_history(from_label, to_label)
     
     transactions = filtered_data.to_dict('records')
+    print(f"Number of filtered transactions: {len(transactions)}")
     
     return jsonify({
         'transactions': transactions

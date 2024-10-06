@@ -54,9 +54,27 @@
                             <p>Drag & Drop .png icons here</p>
                         </div>
                     </div>
+                    <div class="control-group">
+                        <label for="node-label">Node Label:</label>
+                        <textarea id="node-label" placeholder="Enter node label" rows="3"></textarea>
+                        <button onclick="applyNodeLabel()">Apply Node Label</button>
+                    </div>
+                    <div class="control-group">
+                        <label for="edge-label">Edge Label:</label>
+                        <textarea id="edge-label" placeholder="Enter edge label" rows="3"></textarea>
+                        <button onclick="applyEdgeLabel()">Apply Edge Label</button>
+                        <div class="edge-text-controls">
+                            <button onclick="moveEdgeText('left')">Move Left</button>
+                            <button onclick="moveEdgeText('center')">Center</button>
+                            <button onclick="moveEdgeText('right')">Move Right</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+        <footer class="copyright">
+            <p>&copy; 2024 Joel Ikels. Released under the <a href="https://mit-license.org">MIT License</a>.</p>
+        </footer>
     </div>
 
     <style>
@@ -157,6 +175,25 @@
             font-weight: 600;
             margin: 0;
         }
+
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+        }
+
+        .edge-text-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .edge-text-controls button {
+            flex: 1;
+            margin: 0 5px;
+        }
     </style>
 
     <script>
@@ -167,8 +204,5 @@
         });
     </script>
 
-<footer class="copyright">
-    <p>&copy; 2024 Joel Ikels. Released under the <a href="https://mit-license.org">MIT License</a>.</p>
-</footer>
 </body>
 </html>

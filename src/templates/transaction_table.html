@@ -32,16 +32,21 @@
             const urlParams = new URLSearchParams(window.location.search);
             const useFilters = urlParams.get('use_filters') === 'true';
             
-            let requestBody;
+            let requestBody = new URLSearchParams();
             if (useFilters) {
-                requestBody = new URLSearchParams(window.location.search);
-                requestBody.delete('use_filters');
+                for (let [key, value] of urlParams) {
+                    if (key !== 'use_filters') {
+                        requestBody.append(key, value);
+                    }
+                }
+                requestBody.append('use_filters', 'true');
                 document.getElementById('fromLabel').textContent = 'Filtered';
                 document.getElementById('toLabel').textContent = 'Transactions';
             } else {
                 const fromLabel = urlParams.get('from');
                 const toLabel = urlParams.get('to');
-                requestBody = `from_label=${encodeURIComponent(fromLabel)}&to_label=${encodeURIComponent(toLabel)}`;
+                requestBody.append('from_label', fromLabel);
+                requestBody.append('to_label', toLabel);
                 document.getElementById('fromLabel').textContent = fromLabel;
                 document.getElementById('toLabel').textContent = toLabel;
             }
