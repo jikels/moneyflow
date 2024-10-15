@@ -1,8 +1,9 @@
 import csv
 import random
 from datetime import datetime, timedelta
+import os
 
-def generate_sample_data(filename, num_records=500):
+def generate_sample_data(filename, num_records=50000):
     accounts = ['A001', 'A002', 'A003', 'A004', 'A005']
     senders = ['John Doe', 'Jane Smith', 'Alice Johnson', 'Bob Brown', 'Charlie Davis']
     recipients = ['XYZ Corp', 'ABC Inc', '123 Services', 'Tech Solutions', 'Global Traders']
@@ -51,5 +52,5 @@ def generate_sample_data(filename, num_records=500):
 
 if __name__ == "__main__":
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    generate_sample_data(os.path.join(dir_path, 'data/sample_transactions.csv'))
+    generate_sample_data(os.path.join(dir_path, 'data/sample_transactions_xxl.csv'))
     print("Sample data generated in 'sample_transactions.csv'")

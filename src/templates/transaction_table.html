@@ -6,15 +6,35 @@
     <title>Transaction Table</title>
     <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .download-button {
+            display: inline-block;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 16px;
+        }
+        .download-button:hover {
+            background-color: var(--primary-color-hover);
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Transaction Table</h1>
         <h2>From: <span id="fromLabel"></span> To: <span id="toLabel"></span></h2>
+        <button id="downloadCsv" class="download-button">Download as CSV</button>
         <div id="transactionTableContainer">
             <table id="transactionTable">
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>Date</th>
                         <th>From</th>
                         <th>To</th>
@@ -24,7 +44,6 @@
                 <tbody></tbody>
             </table>
         </div>
-        <button id="downloadCsv">Download as CSV</button>
     </div>
 
     <script>
@@ -63,10 +82,11 @@
                 const tableBody = document.querySelector('#transactionTable tbody');
                 tableBody.innerHTML = '';
                 if (data.transactions.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="4">No transactions found</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="5">No transactions found</td></tr>';
                 } else {
-                    data.transactions.forEach(transaction => {
+                    data.transactions.forEach((transaction, index) => {
                         const row = tableBody.insertRow();
+                        row.insertCell().textContent = index + 1; // Add enumeration
                         row.insertCell().textContent = transaction.Date;
                         row.insertCell().textContent = transaction['From Label'];
                         row.insertCell().textContent = transaction['To Label'];

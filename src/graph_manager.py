@@ -11,8 +11,12 @@ class TransactionGraph:
     def create_graph(self):
         print("Creating graph...")
         print(self.data.columns)  # Debugging line
+        
+        # Group by source and target, summing the amounts
+        grouped_data = self.data.groupby(['From Label', 'To Label'])['Amount in Euro'].sum().reset_index()
+        
         G = nx.from_pandas_edgelist(
-            self.data, 
+            grouped_data, 
             source='From Label', 
             target='To Label', 
             edge_attr='Amount in Euro', 
@@ -23,14 +27,18 @@ class TransactionGraph:
     def customize_graph(self, display_amounts, proportional_edges):
         print(f"Customizing graph, display_amounts: {display_amounts}, proportional_edges: {proportional_edges}")
         for node in self.net.nodes:
+            # Add a line break between Sender and Account in the title
+            sender, account = self.split_label(node['id'])
+
             node['title'] = node['id']
-            node['label'] = node['id']
+            node['label'] = f"{sender}\n({account})" if (sender and account) else node['id']
             node['shape'] = 'dot'
             node['image'] = ''
 
         for edge in self.net.edges:
-            amount = edge.get('Amount in Euro', 1)
-            edge['title'] = f"Amount: {amount} EUR"
+            amount = edge.get('Amount in Euro', 0)
+            formatted_amount = f"{amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            edge['title'] = f"Total Amount: {formatted_amount} EUR"
             
             if proportional_edges:
                 edge['value'] = amount
@@ -38,7 +46,7 @@ class TransactionGraph:
                 edge['value'] = 1  # Set a uniform value for all edges
             
             if display_amounts:
-                edge['label'] = f"{amount} EUR"
+                edge['label'] = f"{formatted_amount} EUR"
 
     def toggle_physics(self, enable_physics):
         if not enable_physics:
@@ -99,6 +107,17 @@ class TransactionGraph:
             return True
         except ValueError:
             return False
+
+    @staticmethod
+    def split_label(label):
+        if '(' in label and ')' in label:
+            sender, account = label.rsplit('(', 1)
+            sender = sender.strip()
+            account = account.rstrip(')')
+        else:
+            sender = label
+            account = ''
+        return sender, account
 
     def generate_html(self, file_path):
         self.net.show(file_path)

@@ -153,7 +153,8 @@ def get_graph_data():
 
     return jsonify({
         "graph_data": graph_data,
-        "summary_stats": summary_stats
+        "summary_stats": summary_stats,
+        "filtered_data": filtered_data.to_dict('records')  # Add this line
     })
 @app.route('/get_unique_accounts')
 def get_unique_accounts():
@@ -230,80 +231,40 @@ def get_icons():
 
 @app.route('/annotate')
 def annotate():
-    print("annotate route called")
-    # Load the most recent saved state
-    save_dir = os.path.join(dir_path, 'data/saved_states')
-    print(f"Looking for saved states in: {save_dir}")
-    
-    node_files = [f for f in os.listdir(save_dir) if f.startswith('nodes_')]
-    edge_files = [f for f in os.listdir(save_dir) if f.startswith('edges_')]
-    
-    print(f"Found {len(node_files)} node files and {len(edge_files)} edge files")
+    csv_file = request.args.get('csv_file')
+    if not csv_file:
+        return "No CSV file specified", 400
 
-    if not node_files or not edge_files:
-        print("No saved graph state found.")
-        return "No saved graph state found.", 404
+    csv_path = os.path.join(app.config['UPLOAD_FOLDER'], csv_file)
+    if not os.path.exists(csv_path):
+        return "CSV file not found", 404
 
-    # Get the most recent files
-    latest_node_file = max(node_files)
-    latest_edge_file = max(edge_files)
-    print(f"Latest node file: {latest_node_file}")
-    print(f"Latest edge file: {latest_edge_file}")
+    # Load the filtered data
+    filtered_data = pd.read_csv(csv_path)
 
-    # Load nodes and edges from CSV files
-    nodes_df = pd.read_csv(os.path.join(save_dir, latest_node_file))
-    edges_df = pd.read_csv(os.path.join(save_dir, latest_edge_file))
+    # Create a new graph with the filtered data
+    graph = TransactionGraph(filtered_data)
+    graph.create_graph()
+    graph.customize_graph(display_amounts=True, proportional_edges=True)
+    graph.toggle_physics(enable_physics=True)
+    graph_data = graph.get_graph_data()
 
-    print(f"Loaded {len(nodes_df)} nodes and {len(edges_df)} edges")
-
-    # Create a graph from the loaded data
-    graph = TransactionGraph(pd.DataFrame())  # Initialize with empty DataFrame
-    graph.nodes = nodes_df.to_dict('records')
-    graph.edges = edges_df.to_dict('records')
-
-    # Get the graph data
-    graph_data = {
-        'nodes': graph.nodes,
-        'edges': graph.edges
-    }
-
-    print("Rendering annotation.html template")
     return render_template('annotation.html', initial_graph_data=json.dumps(graph_data))
 @app.route('/save_graph_state', methods=['POST'])
 def save_graph_state():
-    print("save_graph_state route called")
-    graph_state = request.get_json()
-    print("Received graph state:", graph_state)
-    
-    proportional_edges = request.form.get('proportional_edges', 'false') == 'true'
-    
-    nodes = graph_state['nodes']['_data']
-    edges = graph_state['edges']['_data']
+    data = request.get_json()
+    graph_state = data['graph_state']
+    filtered_data = data['filtered_data']
 
-    print(f"Number of nodes: {len(nodes)}, Number of edges: {len(edges)}")
-
-    # Convert nodes and edges to DataFrames
-    nodes_df = pd.DataFrame(nodes.values())
-    edges_df = pd.DataFrame(edges.values())
-
-    # Create the directory if it doesn't exist
-    save_dir = os.path.join(dir_path, 'data/saved_states')
-    os.makedirs(save_dir, exist_ok=True)
-    print(f"Saving to directory: {save_dir}")
-
-    # Generate a unique filename based on timestamp
+    # Save the filtered data to a CSV file
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    nodes_csv = os.path.join(save_dir, f'nodes_{timestamp}.csv')
-    edges_csv = os.path.join(save_dir, f'edges_{timestamp}.csv')
+    csv_filename = f'filtered_data_{timestamp}.csv'
+    csv_path = os.path.join(app.config['UPLOAD_FOLDER'], csv_filename)
+    
+    df = pd.DataFrame(filtered_data)
+    df.to_csv(csv_path, index=False)
 
-    # Save nodes and edges to CSV files
-    nodes_df.to_csv(nodes_csv, index=False)
-    edges_df.to_csv(edges_csv, index=False)
-
-    print(f"Saved nodes to: {nodes_csv}")
-    print(f"Saved edges to: {edges_csv}")
-
-    return jsonify({'success': True, 'message': f'Graph state saved to {save_dir}', 'csv_file': timestamp})
+    return jsonify({'success': True, 'csv_file': csv_filename})
 
 @app.route('/transaction_table')
 def transaction_table():

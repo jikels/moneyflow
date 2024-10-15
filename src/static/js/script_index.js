@@ -2,16 +2,29 @@
 
 let network;
 let currentNodes = [];
+let filteredData;
 
 function initializeGraph(data) {
     const container = document.getElementById('graph');
     const options = getGraphOptions();
-    network = new vis.Network(container, data, options);
+    network = new vis.Network(container, {nodes: [], edges: []}, options);
 
-    // Save node positions when stabilized
+    // Load initial subset of data
+    loadDataSubset(data, 0, 100);
+
     network.on("stabilized", function () {
-        saveNodePositions();
+        // Load more data when graph is stable
+        loadDataSubset(data, network.body.data.nodes.length, 100);
     });
+}
+
+function loadDataSubset(data, start, count) {
+    const subset = {
+        nodes: data.nodes.slice(start, start + count),
+        edges: data.edges.slice(start, start + count)
+    };
+    network.body.data.nodes.add(subset.nodes);
+    network.body.data.edges.add(subset.edges);
 }
 
 function getGraphOptions() {
@@ -72,6 +85,7 @@ function updateGraph() {
     .then(response => response.json())
     .then(data => {
         console.log("Received data from server:", data);
+        filteredData = data.filtered_data;  // Store the filtered data
         const container = document.getElementById('graph');
 
         if (data.graph_data.nodes.length === 0 && data.graph_data.edges.length === 0) {
@@ -118,11 +132,11 @@ function updateSummaryWatermark(stats) {
 
         watermark.innerHTML = `
             Total Transactions: ${stats.total_transactions} |
-            Largest Transaction: €${stats.largest_transaction.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} |
+            Largest Transaction: €${formatCurrency(stats.largest_transaction)} |
             Most Frequent Sender: ${stats.most_frequent_sender} |
             Most Frequent Recipient: ${stats.most_frequent_recipient} |
-            Total Sent: €${totalSentAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} |
-            Total Received: €${totalReceivedAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            Total Sent: €${formatCurrency(totalSentAmount)} |
+            Total Received: €${formatCurrency(totalReceivedAmount)}
         `;
     }
 }
@@ -192,7 +206,7 @@ function filterTransactions() {
                 row.insertCell().textContent = transaction.Date;
                 row.insertCell().textContent = transaction['From Label'];
                 row.insertCell().textContent = transaction['To Label'];
-                row.insertCell().textContent = parseFloat(transaction['Amount in Euro']).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                row.insertCell().textContent = formatCurrency(transaction['Amount in Euro']);
             });
         }
         // Show the transaction table container
@@ -210,33 +224,25 @@ function filterTransactions() {
 
 function annotateGraph() {
     console.log("annotateGraph function called");
-    // Save the current graph state
-    const graphState = JSON.stringify(network.body.data);
+    
+    // Include the filtered data in the request
+    const dataToSend = {
+        graph_state: network.body.data,
+        filtered_data: filteredData
+    };
 
-    console.log("Graph state to be sent for annotation:", graphState);
-
-    // Send the graph state to the server to save as CSV
     fetch('/save_graph_state', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: graphState
+        body: JSON.stringify(dataToSend)
     })
-    .then(response => {
-        console.log("Response received from server:", response);
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
-        console.log("Data received from server:", data);
         if (data.success) {
-            console.log("Opening annotation page with URL:", `/annotate?csv_file=${data.csv_file}`);
             const annotationUrl = `/annotate?csv_file=${data.csv_file}`;
-            const newWindow = window.open(annotationUrl, '_blank');
-            if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
-                console.error("Popup blocked or failed to open");
-                alert("The annotation page couldn't be opened. Please check your popup blocker settings and try again.");
-            }
+            window.open(annotationUrl, '_blank');
         } else {
             console.error("Error saving graph state:", data.error);
             alert("Error saving graph state. Please try again.");
@@ -377,4 +383,11 @@ function viewTransactionTable(useFilters = false) {
     }
     console.log("Transaction table URL:", url);
     window.open(url, '_blank');
+}
+
+function formatCurrency(value) {
+    return parseFloat(value).toLocaleString('de-DE', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
 }
