@@ -38,7 +38,7 @@ Moneyflow is containerized using Docker for easy deployment. Follow these steps 
 
 5. Run the Docker container:
    ```
-   docker run -p 5000:5000 moneyflow-app
+   docker run --network host moneyflow-app
    ```
 
 6. Access the application by opening a web browser and navigating to `http://localhost:5000`.
