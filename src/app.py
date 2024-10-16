@@ -16,8 +16,13 @@ app = Flask(__name__)
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 # Configure upload folder
-UPLOAD_FOLDER = os.path.join(dir_path, 'data/uploads')
+UPLOAD_FOLDER = os.path.join(dir_path, 'data', 'uploads')
+SAVE_FOLDER = os.path.join(dir_path, 'data', 'saved_states')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Create directories if they don't exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(SAVE_FOLDER, exist_ok=True)
 
 def clean():
     save_dir = os.path.join(dir_path, 'data/saved_states')
