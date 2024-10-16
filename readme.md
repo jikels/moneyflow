@@ -16,7 +16,7 @@ Moneyflow is a transaction analysis tool designed to help you visualize and unde
 - **Graph Annotation**: Annotate and customize your transaction graphs for better understanding and presentation.
 ![Annotation](src/static/images/annotate_graph.png)
 
-## Installation
+## Installation and Running
 
 Moneyflow is containerized using Docker for easy deployment. Follow these steps to get it running:
 
@@ -38,7 +38,14 @@ Moneyflow is containerized using Docker for easy deployment. Follow these steps 
    docker build -t moneyflow-app .
    ```
 
-5. Run the Docker container:
+5. Run the Docker container using one of the following commands:
+
+   Option A (recommended for most systems):
+   ```
+   docker run -p 5000:5000 moneyflow-app
+   ```
+
+   Option B (alternative if Option A doesn't work):
    ```
    docker run --network host moneyflow-app
    ```
