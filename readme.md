@@ -2,6 +2,8 @@
 
 Moneyflow is a transaction analysis tool designed to help you visualize and understand your financial flows. Born out of a desire to analyze bank transactions more effectively, this application provides an intuitive interface for exploring complex financial data.
 
+![Demo](src/static/images/demo_moneyflow.gif)
+
 ## Features
 
 - **Transaction Visualization**: Generate interactive graphs of your financial transactions, allowing you to see the flow of money between accounts and entities.
