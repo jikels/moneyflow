@@ -4,12 +4,15 @@ import csv
 import json
 from datetime import datetime, timedelta
 
+import multiprocessing
+multiprocessing.freeze_support()
+
 import pandas as pd
 from flask import Flask, render_template, request, jsonify, url_for, send_file, redirect
 from werkzeug.utils import secure_filename
 
-from .data_processor import TransactionData
-from .graph_manager import TransactionGraph
+from src.data_processor import TransactionData
+from src.graph_manager import TransactionGraph
 
 app = Flask(__name__)
 
@@ -339,5 +342,5 @@ def upload_icon():
         return jsonify({'success': False, 'error': 'Invalid file type'})
 
 if __name__ == "__main__":
-    print("Starting the application...")
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5001)
+
