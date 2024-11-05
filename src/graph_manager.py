@@ -10,13 +10,10 @@ class TransactionGraph:
 
     def create_graph(self):
         print("Creating graph...")
-        print(self.data.columns)  # Debugging line
         
-        # Group by source and target, summing the amounts
-        grouped_data = self.data.groupby(['From Label', 'To Label'])['Amount in Euro'].sum().reset_index()
-        
+        # Data is already grouped when passed in
         G = nx.from_pandas_edgelist(
-            grouped_data, 
+            self.data, 
             source='From Label', 
             target='To Label', 
             edge_attr='Amount in Euro', 
@@ -36,6 +33,10 @@ class TransactionGraph:
             node['image'] = ''
 
         for edge in self.net.edges:
+            if display_amounts:
+                edge['label'] = f"€{edge['Amount in Euro']:,.2f}"
+            if proportional_edges:
+                edge['value'] = float(edge['Amount in Euro'])
             amount = edge.get('Amount in Euro', 0)
             formatted_amount = f"{amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
             edge['title'] = f"Total Amount: {formatted_amount} EUR"

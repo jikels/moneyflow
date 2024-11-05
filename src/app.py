@@ -119,50 +119,40 @@ def get_graph_data():
     enable_physics = request.form.get('enable_physics') == 'true'
     proportional_edges = request.form.get('proportional_edges') == 'true'
 
-    print(f"Received filter parameters: {from_account}, {to_account}, {from_sender}, {to_recipient}, {min_amount}, {max_amount}, {from_date}, {to_date}, {display_amounts}, {enable_physics}, {proportional_edges}")
-
-    # Filter the data
+    # Get filtered and aggregated data
     filtered_data = transaction_data.filter_data(
         from_account, to_account, from_sender, to_recipient,
         min_amount, max_amount, from_date, to_date
     )
 
-    # Create and customize the graph
+    # Create and customize graph
     graph = TransactionGraph(filtered_data)
     graph.create_graph()
     graph.customize_graph(display_amounts, proportional_edges)
     graph.toggle_physics(enable_physics)
-
-    # Get the graph data
-    graph_data = graph.get_graph_data()
-
-    # Calculate Summary Statistics
-    total_transactions = len(filtered_data)
-    if total_transactions > 0:
-        largest_transaction = filtered_data['Amount in Euro'].max()
-        most_frequent_sender = filtered_data['From Sender'].mode()[0]
-        most_frequent_recipient = filtered_data['To Recipient'].mode()[0]
-        total_sent = filtered_data.groupby('From Sender')['Amount in Euro'].sum().to_dict()
-        total_received = filtered_data.groupby('To Recipient')['Amount in Euro'].sum().to_dict()
-    else:
-        largest_transaction = 0
-        most_frequent_sender = "N/A"
-        most_frequent_recipient = "N/A"
-        total_sent = {}
-        total_received = {}
+    
+    # Calculate summary stats from aggregated data
+    total_transactions = filtered_data['Date'].sum()  # Using the count from groupby
+    largest_transaction = filtered_data['Amount in Euro'].max()
+    sender_totals = filtered_data.groupby('From Label')['Amount in Euro'].sum()
+    recipient_totals = filtered_data.groupby('To Label')['Amount in Euro'].sum()
+    
+    most_frequent_sender = sender_totals.idxmax() if not sender_totals.empty else "N/A"
+    most_frequent_recipient = recipient_totals.idxmax() if not recipient_totals.empty else "N/A"
+    
     summary_stats = {
-        "total_transactions": total_transactions,
-        "largest_transaction": largest_transaction,
+        "total_transactions": int(total_transactions),
+        "largest_transaction": float(largest_transaction),
         "most_frequent_sender": most_frequent_sender,
         "most_frequent_recipient": most_frequent_recipient,
-        "total_sent": total_sent,
-        "total_received": total_received
+        "total_sent": sender_totals.to_dict(),
+        "total_received": recipient_totals.to_dict()
     }
 
     return jsonify({
-        "graph_data": graph_data,
+        "graph_data": graph.get_graph_data(),
         "summary_stats": summary_stats,
-        "filtered_data": filtered_data.to_dict('records')  # Add this line
+        "filtered_data": filtered_data.to_dict('records')
     })
 @app.route('/get_unique_accounts')
 def get_unique_accounts():
@@ -177,54 +167,66 @@ def get_transaction_history():
     from_label = request.form.get('from_label')
     to_label = request.form.get('to_label')
     
-    print(f"Fetching transaction history for: {from_label} -> {to_label}")
+    # Get additional filter parameters
+    from_account = request.form.get('from_account', '')
+    to_account = request.form.get('to_account', '')
+    from_sender = request.form.get('from_sender', '')
+    to_recipient = request.form.get('to_recipient', '')
+    min_amount = float(request.form.get('min_amount') or 0)
+    max_amount = float(request.form.get('max_amount') or float('inf'))
+    from_date = pd.to_datetime(request.form.get('from_date') or '1900-01-01')
+    to_date = pd.to_datetime(request.form.get('to_date') or '2100-12-31')
     
-    filtered_data = transaction_data.get_transaction_history(from_label, to_label)
+    filtered_data = transaction_data.get_transaction_history(
+        from_label, to_label,
+        from_account, to_account,
+        from_sender, to_recipient,
+        min_amount, max_amount,
+        from_date, to_date
+    )
     
-    print(f"Found {len(filtered_data)} transactions")
-    
-    result = {
-        'transactions': filtered_data.to_dict('records'),
-        'csv': filtered_data.to_csv(index=False)
-    }
-    
-    return jsonify(result)
+    return jsonify({
+        'transactions': filtered_data.to_dict('records')
+    })
 
 @app.route('/get_filtered_transactions', methods=['POST'])
 def get_filtered_transactions():
-    print("Received request for filtered transactions")
-    print("Form data:", request.form)
+    use_filters = request.form.get('use_filters') == 'true'
     
-    if request.form.get('use_filters') == 'true':
-        from_account = request.form.get('from_account', '')
-        to_account = request.form.get('to_account', '')
-        from_sender = request.form.get('from_sender', '')
-        to_recipient = request.form.get('to_recipient', '')
-        min_amount = float(request.form.get('min_amount') or 0)
-        max_amount = float(request.form.get('max_amount') or float('inf'))
-        from_date = pd.to_datetime(request.form.get('from_date') or '1900-01-01')
-        to_date = pd.to_datetime(request.form.get('to_date') or '2100-12-31')
+    if use_filters:
+        # Get filter parameters from form data
+        filters = {
+            'from_account': request.form.get('from_account', ''),
+            'to_account': request.form.get('to_account', ''),
+            'from_sender': request.form.get('from_sender', ''),
+            'to_recipient': request.form.get('to_recipient', ''),
+            'min_amount': float(request.form.get('min_amount') or 0),
+            'max_amount': float(request.form.get('max_amount') or float('inf')),
+            'from_date': pd.to_datetime(request.form.get('from_date')) if request.form.get('from_date') else pd.to_datetime('1900-01-01'),
+            'to_date': pd.to_datetime(request.form.get('to_date')) if request.form.get('to_date') else pd.to_datetime('2100-12-31')
+        }
         
-        print(f"Applying filters: {from_account}, {to_account}, {from_sender}, {to_recipient}, {min_amount}, {max_amount}, {from_date}, {to_date}")
+        # Get filtered data with current filters
+        filtered_data = transaction_data.filter_data(**filters)
+        valid_pairs = set(zip(filtered_data['From Label'], filtered_data['To Label']))
         
-        filtered_data = transaction_data.filter_data(
-            from_account, to_account, from_sender, to_recipient,
-            min_amount, max_amount, from_date, to_date
-        )
+        # Get detailed transactions for valid pairs
+        detailed_data = transaction_data.data[
+            transaction_data.data.apply(lambda x: (x['From Label'], x['To Label']) in valid_pairs, axis=1)
+        ]
     else:
+        # Just filter by labels with default date range
         from_label = request.form.get('from_label')
         to_label = request.form.get('to_label')
-        print(f"Fetching transactions for labels: {from_label} -> {to_label}")
-        if from_label == to_label:
-            filtered_data = transaction_data.get_transactions_for_entity(from_label)
-        else:
-            filtered_data = transaction_data.get_transaction_history(from_label, to_label)
-    
-    transactions = filtered_data.to_dict('records')
-    print(f"Number of filtered transactions: {len(transactions)}")
+        detailed_data = transaction_data.get_transaction_history(
+            from_label, 
+            to_label,
+            from_date=pd.to_datetime('1900-01-01'),
+            to_date=pd.to_datetime('2100-12-31')
+        )
     
     return jsonify({
-        'transactions': transactions
+        'transactions': detailed_data.sort_values('Date').to_dict('records')
     })
 @app.route('/get_icons')
 def get_icons():
@@ -276,7 +278,24 @@ def save_graph_state():
 
 @app.route('/transaction_table')
 def transaction_table():
-    return render_template('transaction_table.html')
+    use_filters = request.args.get('use_filters') == 'true'
+    filters = {
+        'from_label': request.args.get('from'),
+        'to_label': request.args.get('to'),
+        'from_account': request.args.get('from_account', ''),
+        'to_account': request.args.get('to_account', ''),
+        'from_sender': request.args.get('from_sender', ''),
+        'to_recipient': request.args.get('to_recipient', ''),
+        'min_amount': float(request.args.get('min_amount') or 0),
+        'max_amount': float(request.args.get('max_amount') or float('inf')),
+        'from_date': request.args.get('from_date'),
+        'to_date': request.args.get('to_date'),
+        'use_filters': use_filters
+    }
+    
+    print(f"Transaction table filters: {filters}")  # Debug log
+    
+    return render_template('transaction_table.html', **filters)
 
 @app.route('/download_csv', methods=['POST'])
 def download_csv():

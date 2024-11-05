@@ -132,11 +132,10 @@ function updateSummaryWatermark(stats) {
 
         watermark.innerHTML = `
             Total Transactions: ${stats.total_transactions} |
-            Largest Transaction: €${formatCurrency(stats.largest_transaction)} |
-            Most Frequent Sender: ${stats.most_frequent_sender} |
-            Most Frequent Recipient: ${stats.most_frequent_recipient} |
-            Total Sent: €${formatCurrency(totalSentAmount)} |
-            Total Received: €${formatCurrency(totalReceivedAmount)}
+            Largest Edge Sum: €${formatCurrency(stats.largest_transaction)} |
+            Highest Volume Sender: ${stats.most_frequent_sender} |
+            Highest Volume Recipient: ${stats.most_frequent_recipient} |
+            Total Volume: €${formatCurrency(totalSentAmount)}
         `;
     }
 }
@@ -177,49 +176,27 @@ function updateLabelSelects(nodes) {
 }
 
 function filterTransactions() {
-    console.log("Filtering transactions...");
-
-    const fromLabel = document.getElementById('fromLabelSelect').value;
-    const toLabel = document.getElementById('toLabelSelect').value;
-    
-    console.log(`Filtering transactions from "${fromLabel}" to "${toLabel}"`);
-
     const formData = new FormData();
-    formData.append('from_label', fromLabel);
-    formData.append('to_label', toLabel);
+    
+    // Add selected labels
+    formData.append('from_label', document.getElementById('fromLabelSelect').value);
+    formData.append('to_label', document.getElementById('toLabelSelect').value);
+    
+    // Add all current filter values
+    ['from_account', 'to_account', 'from_sender', 'to_recipient', 
+     'min_amount', 'max_amount', 'from_date', 'to_date'].forEach(id => {
+        formData.append(id, document.getElementById(id).value);
+    });
 
-    fetch('/get_filtered_transactions', {
+    fetch('/get_transaction_history', {
         method: 'POST',
         body: formData
     })
     .then(response => response.json())
     .then(data => {
-        console.log("Received filtered transactions from server:", data);
-        const tableBody = document.querySelector('#transactionTable tbody');
-        tableBody.innerHTML = '';
-        if (data.transactions.length === 0) {
-            console.log("No transactions found");
-            tableBody.innerHTML = '<tr><td colspan="4">No transactions found</td></tr>';
-        } else {
-            data.transactions.forEach(transaction => {
-                const row = tableBody.insertRow();
-                row.insertCell().textContent = transaction.Date;
-                row.insertCell().textContent = transaction['From Label'];
-                row.insertCell().textContent = transaction['To Label'];
-                row.insertCell().textContent = formatCurrency(transaction['Amount in Euro']);
-            });
-        }
-        // Show the transaction table container
-        const tableContainer = document.getElementById('transactionTableContainer');
-        if (tableContainer) {
-            tableContainer.style.display = 'block';
-        } else {
-            console.error("Transaction table container not found");
-        }
+        updateTransactionTable(data.transactions);
     })
-    .catch(error => {
-        console.error("Error fetching filtered transactions:", error);
-    });
+    .catch(error => console.error("Error fetching transaction history:", error));
 }
 
 function annotateGraph() {
@@ -390,4 +367,25 @@ function formatCurrency(value) {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });
+}
+
+function openTransactionTable(fromLabel, toLabel) {
+    // Get all current filter values
+    const params = new URLSearchParams({
+        from: fromLabel,
+        to: toLabel,
+        from_account: document.getElementById('from_account').value,
+        to_account: document.getElementById('to_account').value,
+        from_sender: document.getElementById('from_sender').value,
+        to_recipient: document.getElementById('to_recipient').value,
+        min_amount: document.getElementById('min_amount').value,
+        max_amount: document.getElementById('max_amount').value,
+        from_date: document.getElementById('from_date').value,
+        to_date: document.getElementById('to_date').value,
+        use_filters: 'true'  // Add this flag
+    });
+
+    const url = `/transaction_table?${params.toString()}`;
+    console.log("Opening transaction table with URL:", url);
+    window.open(url, '_blank');
 }
